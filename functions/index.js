@@ -92,6 +92,13 @@ exports.onMasterTradeUpdated = functions.firestore
         return null; // Return null to indicate successful execution
     });
 
+exports.monthlyTask = functions.pubsub.schedule('0 0 1 * *')
+    .timeZone('UTC') // Users can choose timezone - default is America/Los_Angeles
+    .onRun((context) => {
+        startNewMonth();
+        return null;
+    });
+
 function createChildTrades(masterId) {
     db.collection('master_trades').doc(masterId).get()
         .then((snapshot) => {
@@ -276,3 +283,35 @@ function updateDashboard(userId, { currentTotalTrades, currentBalance, currentTo
 
         });
 }
+
+function startNewMonth() {
+    console.log('Staring new month');
+    console.log('Pushing data to prevMonth');
+    db.collection('dashboards').get().then((querySnapshot) => {
+        querySnapshot.docs.forEach((doc) => {
+            var data = doc.data();
+            data['balances'] = cutOff(data['balances']);
+            data['currentBalance'] = data['prevBalance'];
+            data['prevMonthTotalTrades'] = data['currentTotalTrades'];
+            data['prevMonthWinStreak'] = data['currentWinStreak'];
+            data['prevMonthActiveDays'] = data['currentActiveDays'];
+            data['prevMonthTotalWins'] = data['currentTotalWins'];
+            data['prevMonthTotalLosses'] = data['currentTotalLosses'];
+            data['prevMonthTotalBreakevens'] = data['currentTotalBreakevens'];
+        })
+    })
+        .catch((error) => {
+            console.log('Failed to query dashboards', error);
+        })
+}
+
+function cutOff(array) {
+    if (array.length > 100) {
+      let startIndex = array.length - 100;
+      let newArray = array.slice(startIndex);
+      return newArray;
+    } else {
+      return array;
+    }
+  }
+  
