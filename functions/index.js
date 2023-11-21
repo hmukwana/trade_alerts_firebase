@@ -92,8 +92,10 @@ exports.onMasterTradeUpdated = functions.firestore
         return null; // Return null to indicate successful execution
     });
 
-exports.monthlyTask = functions.pubsub.schedule('0 0 1 * *')
-    .timeZone('UTC') // Users can choose timezone - default is America/Los_Angeles
+// scheduled to run on the 1st of every month at 8am
+exports.monthlyTask = functions.pubsub.schedule('0 8 1 * *')
+    // Timezone from  tz database http://en.wikipedia.org/wiki/Tz_database
+    .timeZone("Africa/Kampala")
     .onRun((context) => {
         startNewMonth();
         return null;
@@ -307,11 +309,10 @@ function startNewMonth() {
 
 function cutOff(array) {
     if (array.length > 100) {
-      let startIndex = array.length - 100;
-      let newArray = array.slice(startIndex);
-      return newArray;
+        let startIndex = array.length - 100;
+        let newArray = array.slice(startIndex);
+        return newArray;
     } else {
-      return array;
+        return array;
     }
-  }
-  
+}
